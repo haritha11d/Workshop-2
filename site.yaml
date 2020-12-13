@@ -1,0 +1,65 @@
+---
+- hosts: webservers
+  gather_facts: yes
+  tasks:
+   - name: Update cache
+     become: yes
+     apt:
+      update_cache: yes
+   - name: php-fpm version 7.4 installation
+     become: yes
+     apt:
+      name: php7.4-fpm
+      state: present
+   - name:  checking if nginx is installed
+     become: yes
+     apt:
+      name: nginx
+      state: latest
+   - name: initiate nginx
+     become: yes
+     service:
+         name: nginx
+         state: started
+   - name: php file copy
+     become: yes
+     copy:
+       src: index.php
+       dest: /var/www/html/
+   - name: Templet file to be change 
+     become: yes
+     template:
+       src: nginx.conf.j2
+       dest: /etc/nginx/sites-available/default
+   - name:  Enable the configuration file from nginx sites-available 
+     become: yes
+     file:
+       src: /etc/nginx/sites-available/default
+       dest: /etc/nginx/sites-enabled/default
+       state: link
+   - name: Server should be restart
+     become: yes
+     service:
+          name: nginx
+          state: restarted
+
+- hosts: haproxy
+  gather_facts: yes
+  become: yes
+  tasks:
+   - name: Haproxy should update with cache
+     apt:
+      update_cache: yes
+   - name: Install haproxy
+     become: yes
+     apt:
+      name: haproxy
+      state: present
+   - name: config file should be update for HAproxy
+     template:
+      src: haproxy.cfg.j2
+      dest: /etc/haproxy/haproxy.cfg
+   - name: Restart HAProxy
+     service:
+       name: haproxy
+       state: restarted
